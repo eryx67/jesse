@@ -58,6 +58,11 @@ is_array(_) ->
 %% 3) jsx format (`[{binary() | atom(), any()}]')
 %% Returns `true' if the given data is an object, otherwise `false' is returned.
 -spec is_json_object(Value :: any()) -> boolean().
+?IF_MAPS(
+is_json_object(Map)
+  when erlang:is_map(Map) ->
+  true;
+)
 is_json_object({struct, Value})
   when is_list(Value) ->
   true;
@@ -72,11 +77,6 @@ is_json_object([{Key, _Value} | _])
   when is_binary(Key) orelse is_atom(Key)
        andalso Key =/= struct ->
   true;
-?IF_MAPS(
-is_json_object(Map)
-  when erlang:is_map(Map) ->
-  true;
-)
 is_json_object(_) ->
   false.
 

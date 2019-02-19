@@ -32,7 +32,7 @@
 
 
 -type schema_error() :: ?invalid_dependency
-                      | ?not_multiple_of
+                      | ?only_ref_allowed
                       | ?schema_invalid
                       | ?wrong_all_of_schema_array
                       | ?wrong_any_of_schema_array
@@ -74,10 +74,17 @@
 %%% API
 %% @doc Goes through attributes of the given schema `JsonSchema' and
 %% validates the value `Value' against them.
--spec check_value( Value      :: any()
-                 , JsonSchema :: jesse:json_term()
-                 , State      :: jesse_state:state()
+-spec check_value( Value :: jesse:json_term()
+                 , JsonSchema :: jesse:schema()
+                 , State :: jesse_state:state()
                  ) -> jesse_state:state() | no_return().
+check_value(Value, [{?REF, RefSchemaURI} | Attrs], State) ->
+  case Attrs of
+    [] ->
+      validate_ref(Value, RefSchemaURI, State);
+    _ ->
+      handle_schema_invalid(?only_ref_allowed, State)
+  end;
 check_value(Value, [{?TYPE, Type} | Attrs], State) ->
   NewState = check_type(Value, Type, State),
   check_value(Value, Attrs, NewState);
@@ -246,9 +253,6 @@ check_value(Value, [{?ONEOF, Schemas} | Attrs], State) ->
   check_value(Value, Attrs, NewState);
 check_value(Value, [{?NOT, Schema} | Attrs], State) ->
   NewState = check_not(Value, Schema, State),
-  check_value(Value, Attrs, NewState);
-check_value(Value, [{?REF, RefSchemaURI} | Attrs], State) ->
-  NewState = validate_ref(Value, RefSchemaURI, State),
   check_value(Value, Attrs, NewState);
 check_value(Value, [], State) ->
   maybe_external_check_value(Value, State);
@@ -829,6 +833,8 @@ check_max_items(Value, _MaxItems, State) ->
 %%   false.
 %%
 %% @private
+check_unique_items(_, false, State) ->
+  State;
 check_unique_items([], true, State) ->
   State;
 check_unique_items(Value, true, State) ->

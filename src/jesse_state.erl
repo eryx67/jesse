@@ -308,10 +308,12 @@ load_local_schema(Schema, [Key | Keys]) ->
       end
   end.
 
+-type http_uri_uri() :: string() | unicode:unicode_binary(). %% From https://github.com/erlang/otp/blob/OTP-20.2.3/lib/inets/doc/src/http_uri.xml#L57
+
 %% @doc Resolve a new id
 %% @private
--spec combine_id(undefined | http_uri:uri(),
-                 undefined | binary()) -> http_uri:uri().
+-spec combine_id(undefined | http_uri_uri(),
+                 undefined | string() | binary()) -> http_uri_uri().
 combine_id(Id, undefined) ->
   Id;
 combine_id(Id, RefBin) ->
@@ -417,7 +419,6 @@ load_schema(#state{schema_loader_fun = LoaderFun}, SchemaURI) ->
         end
   catch
     _C:_E ->
-      %% io:format("load_schema: ~p\n", [{_C, _E, erlang:get_stacktrace()}]),
       ?not_found
   end.
 
